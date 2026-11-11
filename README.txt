@@ -1,5 +1,5 @@
 HARDENED LLM AGENT HARNESS — EXPLAINER & AUDIT DASHBOARD
-Version 3.0.5
+Version 3.0.6
 ================================================================================
 
 TL;DR
@@ -7,11 +7,64 @@ TL;DR
     chmod +x 00-one-shot.sh
     ./00-one-shot.sh
 
-Converges idempotently. Preflight gate -> file lock -> emit -> verify -> build
--> Docker -> GitHub -> Pages -> open. Never aborts on a single failure; prints
-a summary-first result. Exit code is always 0.
+Converges idempotently. Preflight -> lock -> emit -> verify -> build -> Docker
+-> GitHub -> Pages -> open. Never aborts on a single failure.
 
-WHAT CHANGED IN 3.0.5
+HOW WE GOT HERE (v1.0.0 -> v3.0.6)
+--------------------------------------------------------------------------------
+  1.0.0  Original concept: a static Vite/React explainer for Cole Medin's
+         11 tiny coding agent fixes. Single-file, no backend.
+  2.0.0  Added schema-validated HANDOFF.md, the hook exit-code simulator, and
+         the deterministic hook guardrail concept.
+  2.1.0  First real Docker backend (zero-dependency node:20-alpine API server);
+         GitHub Pages workflow; first successful end-to-end deployment.
+  2.2.0  Corrected the hook contract from folklore to the official docs:
+         exit 1 is NON-BLOCKING; exit 2 blocks; permissionDecision JSON is the
+         authoritative path. Added onFailure:"block" (Claude Code v2.1.295+).
+  3.0.0  Hardened one-shot: preflight gate, flock, DRY_RUN, target-side marker,
+         summary-first output, .nojekyll, dispatch SHA input.
+  3.0.1  Fixed a port preflight false positive (ss could not read process names
+         without CAP_NET_ADMIN; Docker now queried first). Fixed a top-level
+         `return` that only works inside functions.
+  3.0.2  DRY_RUN now exits before any mutation (was still emitting files).
+         Health check asserts running container version == package.json version.
+         Git SHA read only when the target dir is itself the git toplevel.
+  3.0.3  emit() accepts zero-byte files (.nojekyll). Diverged-history push uses
+         git fetch + ahead/behind + --force-with-lease instead of failing.
+  3.0.4  (Rejected) Attempted to distinguish HTTP 404 from mixed-content via an
+         ESM wrapper. Did nothing: rollup renames exported function bindings,
+         so `probeBackend = async …` targeted a dead local symbol.
+  3.0.6  Replaced the wrapper with an in-place probeBackend rewrite. HTTPS
+         pages probe http://localhost:8081 first. Yet the deployed site still
+         showed raw HTML: vite.config.js read GITHUB_REPOSITORY, which the
+         workflow never exported, so base defaulted to '/' and /assets/* 404'd.
+  3.0.6  (Current) vite.config.js uses VITE_BASE exclusively; the workflow
+         always sets it. HTTPS pages that detect a localhost backend redirect
+         to http://localhost:8081 for full mode. README rewritten.
+
+WHERE WE ARE
+--------------------------------------------------------------------------------
+  The Pages URL loads a working React app. If Docker is running locally, the
+  page detects http://localhost:8081 and redirects you to the full-mode UI.
+  If Docker is not running, it stays on Pages in static mode (both interactive
+  tools still work via the client-side policy mirror).
+
+HOW TO USE
+--------------------------------------------------------------------------------
+  Local full mode (authoritative server policy + real SHA-256):
+      docker compose up -d
+      open http://localhost:8081/
+
+  Static mode (no Docker required, client-side policy mirror):
+      open https://<owner>.github.io/hardened-agent-harness-explainer/
+
+  Rebuild / redeploy everything:
+      ./00-one-shot.sh
+
+  Verify the hook contract without deploying:
+      python3 scripts/hook_runner.py --self-test
+
+WHAT CHANGED IN 3.0.6
 --------------------------------------------------------------------------------
   - Preflight gate: Docker daemon, compose syntax, port ownership, git state,
     node/npm versions, gh auth. No mutation before the gate passes.
@@ -184,7 +237,7 @@ DOCKER BACKEND
 
     curl http://localhost:8081/api/health
     # {"backend":"ok","mode":"full","service":"hardened-agent-harness",
-    #  "version":"3.0.5","policyRules":5,"policySource":"server-fetched"}
+    #  "version":"3.0.6","policyRules":5,"policySource":"server-fetched"}
 
     open http://localhost:8081/
 

@@ -79,6 +79,20 @@ export async function probeBackend(apiBase = '', timeoutMs = 2500) {
   return origin;
 }
 
+// If the page is on HTTPS and a localhost backend answered, send the browser
+// to the local Docker UI so the user gets full mode (real server-side policy,
+// server SHA-256). Executed once per session to avoid redirect loops.
+let _redirected = false;
+export function redirectToLocalBackendIfAvailable(backend) {
+  if (_redirected) return;
+  if (typeof window === 'undefined') return;
+  if (window.location.protocol !== 'https:') return;
+  if (!backend || !backend.online) return;
+  if (backend.backendOrigin !== DEFAULT_LOCAL_BACKEND) return;
+  _redirected = true;
+  window.location.replace(DEFAULT_LOCAL_BACKEND + '/');
+}
+
 
 export async function evaluateHookRemote(apiBase, payload) {
   const res = await fetch(apiBase + '/api/hooks/evaluate', {

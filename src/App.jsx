@@ -5,7 +5,7 @@ import PromptTable from './components/PromptTable.jsx';
 import HookSimulator from './components/HookSimulator.jsx';
 import BackendBadge from './components/BackendBadge.jsx';
 import { validateHandoffStateLocal, validateHandoffStateRemote } from './utils/handoffValidator.js';
-import { probeBackend, loadPolicy } from './utils/api.js';
+import { probeBackend, loadPolicy, redirectToLocalBackendIfAvailable } from './utils/api.js';
 import { FALLBACK_RULES } from './utils/policyFallback.js';
 import { Cpu, Layers, BookOpen, ShieldCheck, FileCheck } from 'lucide-react';
 
@@ -35,7 +35,11 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
-    probeBackend(API_BASE).then((r) => { if (alive) setBackend({ ...r, probing: false }); });
+    probeBackend(API_BASE).then((r) => {
+      if (!alive) return;
+      setBackend({ ...r, probing: false });
+      redirectToLocalBackendIfAvailable(r);
+    });
     loadPolicy(BASE_URL).then((p) => { if (alive) setPolicy(p); });
     return () => { alive = false; };
   }, []);
