@@ -40,12 +40,17 @@ export default function App() {
     return () => { alive = false; };
   }, []);
 
+  const activeApiBase =
+    backend.online && backend.backendOrigin && backend.backendOrigin !== 'same-origin'
+      ? backend.backendOrigin
+      : API_BASE;
+
   const handleValidateHandoff = async () => {
     setValidating(true);
     try {
       if (backend.online) {
         try {
-          setValidationResult(await validateHandoffStateRemote(API_BASE, sampleHandoff));
+          setValidationResult(await validateHandoffStateRemote(activeApiBase, sampleHandoff));
           return;
         } catch (e) { /* fall through */ }
       }
@@ -111,7 +116,7 @@ export default function App() {
             <h2 style={{ color: '#f8fafc', fontSize: '1.4rem', marginBottom: '16px' }}>
               Live Harness Execution &amp; Validation Tools
             </h2>
-            <HookSimulator apiBase={API_BASE} backend={backend} rules={policy.rules} policySource={policy.source} />
+            <HookSimulator apiBase={activeApiBase} backend={backend} rules={policy.rules} policySource={policy.source} />
             <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', border: '1px solid #334155', marginTop: '24px' }}>
               <h3 style={{ color: '#38bdf8', fontSize: '1.1rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileCheck size={18} /> HANDOFF.md Schema &amp; Checksum Validator

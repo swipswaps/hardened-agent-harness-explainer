@@ -21,7 +21,7 @@ export async function loadPolicy(baseUrl = '') {
   return { rules: CACHED_RULES, source: CACHED_SOURCE };
 }
 
-export async function probeBackend(apiBase = '', timeoutMs = 2500) {
+async function probeOne(apiBase, timeoutMs) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -41,21 +41,44 @@ export async function probeBackend(apiBase = '', timeoutMs = 2500) {
   }
 }
 
-// probeBackend already returned { online: false, reason: 'HTTP 404' } above when
-// the fetch succeeded but the status was not ok. Wrap it so callers see a
-// human-readable reason that distinguishes "no backend on this host" from
-// "backend exists but is failing".
-const _origProbe = probeBackend;
-probeBackend = async function (apiBase = '', timeoutMs = 2500) {
-  const r = await _origProbe(apiBase, timeoutMs);
-  if (!r.online && r.reason === 'HTTP 404') {
-    return { online: false, reason: 'static host (no backend endpoint)' };
+const DEFAULT_LOCAL_BACKEND =
+  (import.meta && import.meta.env && import.meta.env.VITE_LOCAL_BACKEND) ||
+  'http://localhost:8081';
+
+export async function probeBackend(apiBase = '', timeoutMs = 2500) {
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+  // On HTTPS (GitHub Pages): try localhost first. Browsers exempt localhost
+  // from mixed-content blocking (W3C potentially-trustworthy-origin), so this
+  // works whenever the user has `docker compose up -d` running locally.
+  if (isHttps) {
+    const local = await probeOne(DEFAULT_LOCAL_BACKEND, timeoutMs);
+    if (local.online) {
+      return { ...local, backendOrigin: DEFAULT_LOCAL_BACKEND };
+    }
   }
-  if (!r.online && typeof r.reason === 'string' && r.reason.indexOf('Failed to fetch') >= 0) {
-    return { online: false, reason: 'unreachable (mixed-content or offline)' };
+
+  // Otherwise probe the page's own origin. Works on http://localhost:8081.
+  const origin = await probeOne(apiBase, timeoutMs);
+  if (origin.online) {
+    return { ...origin, backendOrigin: apiBase || 'same-origin' };
   }
-  return r;
-};
+
+  // Both failed. On HTTPS, say exactly why.
+  if (isHttps) {
+    if (origin.reason === 'HTTP 404') {
+      return {
+        online: false,
+        reason: 'no localhost backend — run: docker compose up -d',
+        backendOrigin: 'none'
+      };
+    }
+    return { online: false, reason: 'unreachable (offline or blocked)', backendOrigin: 'none' };
+  }
+
+  return origin;
+}
+
 
 export async function evaluateHookRemote(apiBase, payload) {
   const res = await fetch(apiBase + '/api/hooks/evaluate', {

@@ -1,12 +1,12 @@
 {
-  "version": "3.0.3",
-  "finishedAt": "2026-11-11T20:07:29Z",
+  "version": "3.0.4",
+  "finishedAt": "2026-11-11T20:28:01Z",
   "repoRoot": "/home/owner/Documents/47e2c2ca89c5f4aa/repo/hardened-agent-harness",
   "mode": "re-run",
   "hookVerified": "yes",
   "dockerOk": "yes",
   "pagesVerified": "yes",
   "pagesUrl": "https://swipswaps.github.io/hardened-agent-harness-explainer/",
-  "headSha": "cc2229fb7870e695e2ffd5f547da4999493da853",
+  "headSha": "6b11d214da83d790674289964c96e4da46151180",
   "issues": 0
 }
