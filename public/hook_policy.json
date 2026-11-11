@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "env-secret-read",
+      "description": "Block reads/writes/edits of .env files and secrets/ directories",
+      "tools": ["Read", "Write", "Edit", "MultiEdit", "Bash"],
+      "path_regex": "(^|/)\\.env(\\.|$)|(^|/)secrets?/",
+      "decision": "deny",
+      "reason": "Access to sensitive path \"{path}\" is prohibited. Use an environment variable mock injected via the test harness instead."
+    },
+    {
+      "id": "system-config-write",
+      "description": "Block edits to system core configuration",
+      "tools": ["Write", "Edit", "MultiEdit", "Bash"],
+      "path_regex": "config\\.system$",
+      "decision": "deny",
+      "reason": "Modification of system core configuration \"{path}\" requires human escalation."
+    },
+    {
+      "id": "rm-rf-root",
+      "description": "Block recursive deletion of root",
+      "tools": ["Bash"],
+      "command_regex": "\\brm\\s+(-[a-zA-Z]*[rf][a-zA-Z]*\\s+)+/(\\s|$)",
+      "decision": "deny",
+      "reason": "Recursive deletion of \"/\" is never permitted."
+    },
+    {
+      "id": "npm-when-bun",
+      "description": "Enforce bun when bun.lockb is present",
+      "tools": ["Bash"],
+      "command_regex": "\\bnpm\\s+(install|i|ci)\\b",
+      "requires_file": "bun.lockb",
+      "decision": "deny",
+      "reason": "bun.lockb is present; use \"bun install\" instead of npm."
+    },
+    {
+      "id": "whitespace-before-commit",
+      "description": "Block git commit when the working tree has whitespace errors",
+      "tools": ["Bash"],
+      "command_regex": "\\bgit\\s+commit\\b",
+      "check": {
+        "argv": ["git", "diff", "--check"],
+        "match_on": "nonzero",
+        "timeout_seconds": 5
+      },
+      "decision": "deny",
+      "reason": "Whitespace errors detected. Run \"git diff --check\" and fix them before committing."
+    }
+  ]
+}
