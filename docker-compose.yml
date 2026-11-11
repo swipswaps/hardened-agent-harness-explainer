@@ -1,7 +1,7 @@
 services:
   harness-backend:
     build: .
-    image: hardened-agent-harness-backend:3.0.3
+    image: hardened-agent-harness-backend:3.0.4
     container_name: hardened-agent-harness
     ports:
       - "${HARNESS_PORT:-8081}:8081"

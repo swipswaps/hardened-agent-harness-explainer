@@ -41,6 +41,22 @@ export async function probeBackend(apiBase = '', timeoutMs = 2500) {
   }
 }
 
+// probeBackend already returned { online: false, reason: 'HTTP 404' } above when
+// the fetch succeeded but the status was not ok. Wrap it so callers see a
+// human-readable reason that distinguishes "no backend on this host" from
+// "backend exists but is failing".
+const _origProbe = probeBackend;
+probeBackend = async function (apiBase = '', timeoutMs = 2500) {
+  const r = await _origProbe(apiBase, timeoutMs);
+  if (!r.online && r.reason === 'HTTP 404') {
+    return { online: false, reason: 'static host (no backend endpoint)' };
+  }
+  if (!r.online && typeof r.reason === 'string' && r.reason.indexOf('Failed to fetch') >= 0) {
+    return { online: false, reason: 'unreachable (mixed-content or offline)' };
+  }
+  return r;
+};
+
 export async function evaluateHookRemote(apiBase, payload) {
   const res = await fetch(apiBase + '/api/hooks/evaluate', {
     method: 'POST',

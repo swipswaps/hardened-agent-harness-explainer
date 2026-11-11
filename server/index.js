@@ -177,7 +177,7 @@ const server = http.createServer(async (req, res) => {
         backend: 'ok',
         mode: 'full',
         service: 'hardened-agent-harness',
-        version: '3.0.3',
+        version: '3.0.4',
         policyRules: HOOK_POLICY.length,
         policySource: POLICY_SOURCE
       });
