@@ -1,5 +1,5 @@
 HARDENED LLM AGENT HARNESS — EXPLAINER & AUDIT DASHBOARD
-Version 3.0.2
+Version 3.0.3
 ================================================================================
 
 TL;DR
@@ -11,7 +11,7 @@ Converges idempotently. Preflight gate -> file lock -> emit -> verify -> build
 -> Docker -> GitHub -> Pages -> open. Never aborts on a single failure; prints
 a summary-first result. Exit code is always 0.
 
-WHAT CHANGED IN 3.0.2
+WHAT CHANGED IN 3.0.3
 --------------------------------------------------------------------------------
   - Preflight gate: Docker daemon, compose syntax, port ownership, git state,
     node/npm versions, gh auth. No mutation before the gate passes.
@@ -184,7 +184,7 @@ DOCKER BACKEND
 
     curl http://localhost:8081/api/health
     # {"backend":"ok","mode":"full","service":"hardened-agent-harness",
-    #  "version":"3.0.2","policyRules":5,"policySource":"server-fetched"}
+    #  "version":"3.0.3","policyRules":5,"policySource":"server-fetched"}
 
     open http://localhost:8081/
 
